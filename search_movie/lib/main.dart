@@ -1,5 +1,6 @@
 // ignore_for_file: prefer_const_constructors, library_private_types_in_public_api
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:tmdb_api/tmdb_api.dart';
 
@@ -32,13 +33,33 @@ class _HomeState extends State<Home> {
       'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJhM2NkYTFhMTQ1MTI3OGNmMjc3ZmJmYTkyNGZjZjVmYyIsInN1YiI6IjY0ZGMyN2NlZDEwMGI2MDExYzg0MWEwNCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.ZfNwvftxzJ6rdFflVj5WWb1Zy0Py4VNSlxB-QHXaRII';
 
   List topratedmovies = [];
+  // For lazy load
+  final ScrollController _scrollController = ScrollController();
+  int _currentMax = 5;
 
   @override
   void initState() {
     super.initState();
     loadmovies();
+    // For lazy loading
+    topratedmovies = List.generate(_currentMax, (index) => "${index + 1}");
+    _scrollController.addListener(() {
+      // check More data is present of not
+      if (_scrollController.position.pixels ==
+          _scrollController.position.maxScrollExtent) {
+        _getMoreData();
+      }
+    });
   }
 
+  _getMoreData() {
+    for (int i = _currentMax; i < _currentMax + 5; i++) {
+      topratedmovies.add("${i + 1}");
+    }
+    _currentMax = _currentMax + 5;
+  }
+
+// For Fatching the data through the API
   loadmovies() async {
     TMDB tmdbWithCustomLogs = TMDB(
       ApiKeys(apikey, readaccesstoken),
@@ -55,8 +76,7 @@ class _HomeState extends State<Home> {
     });
   }
 
-  // for Searchin movie
-
+  // For Searchin movie
   void Filter(String Element) {
     List search = [];
     if (Element.isEmpty) {
@@ -67,7 +87,6 @@ class _HomeState extends State<Home> {
               value["title"].toLowerCase().contains(Element.toLowerCase()))
           .toList();
     }
-
     setState(() {
       topratedmovies = search;
     });
@@ -86,6 +105,7 @@ class _HomeState extends State<Home> {
             SizedBox(
               height: 20,
             ),
+            // For Searching Movies
             Text(
               "Top Rating Movies",
               style: TextStyle(fontSize: 30),
@@ -107,29 +127,35 @@ class _HomeState extends State<Home> {
             Expanded(
               child: ListView.separated(
                 scrollDirection: Axis.vertical,
-                itemCount: topratedmovies.length,
+                itemCount: topratedmovies.length + 1,
                 itemBuilder: (context, index) {
+                  // For Lozy loading
+                  if (index == topratedmovies.length) {
+                    return const CupertinoActivityIndicator();
+                  }
                   return ListTile(
-                    // This Container for Poster
+                    // This is for Poster
                     leading: Image(
                       image: NetworkImage(
                         'https://image.tmdb.org/t/p/w500' +
-                            topratedmovies[index]['poster_path'],
+                                topratedmovies[index]['poster_path'] ??
+                            '',
                       ),
                     ),
 
-                    // This container or Title and Rating
+                    // This is for Title
 
                     title: Text(
                       topratedmovies[index]['title'] ?? 'Loading',
                     ),
+                    // This is for Rating
                     subtitle: Text(
                       topratedmovies[index]['vote_average'] != null
                           ? topratedmovies[index]['vote_average'].toString()
                           : 'Rating of movie',
                     ),
 
-                    // Button for favorite list
+                    // Button for favourite list
                     trailing: IconButton(
                         onPressed: () {
                           Icons.favorite;
