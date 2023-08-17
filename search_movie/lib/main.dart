@@ -1,18 +1,19 @@
-// ignore_for_file: prefer_const_constructors, library_private_types_in_public_api
+// ignore_for_file: library_private_types_in_public_api
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:tmdb_api/tmdb_api.dart';
 
 import 'SplashScreen.dart';
 
-void main() => runApp(MyApp());
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       home: splashscreen(),
     );
   }
@@ -31,44 +32,45 @@ class _HomeState extends State<Home> {
       'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJhM2NkYTFhMTQ1MTI3OGNmMjc3ZmJmYTkyNGZjZjVmYyIsInN1YiI6IjY0ZGMyN2NlZDEwMGI2MDExYzg0MWEwNCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.ZfNwvftxzJ6rdFflVj5WWb1Zy0Py4VNSlxB-QHXaRII';
 
   List topratedmovies = [];
+  final ScrollController _scrollController = ScrollController();
+  int _currentMax = 5;
 
   @override
   void initState() {
     super.initState();
     loadmovies();
+    topratedmovies = List.generate(_currentMax, (index) => "${index + 1}");
+    _scrollController.addListener(() {
+      // check More data is present of not
+      if (_scrollController.position.pixels ==
+          _scrollController.position.maxScrollExtent) {
+        _getMoreData();
+      }
+    });
+  }
+
+  _getMoreData() {
+    for (int i = _currentMax; i < _currentMax + 5; i++) {
+      topratedmovies.add("${i + 1}");
+    }
+    _currentMax = _currentMax + 5;
+    setState(() {});
   }
 
   loadmovies() async {
     TMDB tmdbWithCustomLogs = TMDB(
       ApiKeys(apikey, readaccesstoken),
-      logConfig: ConfigLogger(
+      logConfig: const ConfigLogger(
         showLogs: true,
         showErrorLogs: true,
       ),
     );
 
     // ignore: non_constant_identifier_names
-    Map Result = await tmdbWithCustomLogs.v3.movies.getTopRated();
+    Map<dynamic, dynamic> Result =
+        await tmdbWithCustomLogs.v3.movies.getTopRated();
     setState(() {
       topratedmovies = Result['results'];
-    });
-  }
-
-  // for Searchin movie
-
-  void Filter(String Element) {
-    List search = [];
-    if (Element.isEmpty) {
-      search = topratedmovies;
-    } else {
-      search = topratedmovies
-          .where((value) =>
-              value["title"].toLowerCase().contains(Element.toLowerCase()))
-          .toList();
-    }
-
-    setState(() {
-      topratedmovies = search;
     });
   }
 
@@ -76,33 +78,42 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Center(
+          title: const Center(
             child: Text("Movies App"),
           ),
         ),
         body: ListView.separated(
           scrollDirection: Axis.vertical,
-          itemCount: topratedmovies.length,
+          controller: _scrollController,
+          itemCount: topratedmovies.length + 1,
           itemBuilder: (context, index) {
+            if (index == topratedmovies.length) {
+              return const CupertinoActivityIndicator();
+            }
             return ListTile(
               // This Container for Poster
               leading: Image(
                 image: NetworkImage(
                   'https://image.tmdb.org/t/p/w500' +
-                      topratedmovies[index]['poster_path'],
+                          topratedmovies[index]['poster_path'] ??
+                      '',
                 ),
               ),
 
               // This container or Title and Rating
 
-              title: Text(
-                topratedmovies[index]['title'] ?? 'Loading',
+              title: SizedBox(
+                height: 30,
+                child: Text(
+                  topratedmovies[index]['title'] ?? 'Loading',
+                  style: const TextStyle(fontSize: 15),
+                ),
               ),
               subtitle: Text(
-                topratedmovies[index]['vote_average'] != null
-                    ? topratedmovies[index]['vote_average'].toString()
-                    : 'Rating of movie',
-              ),
+                  topratedmovies[index]['vote_average'] != null
+                      ? topratedmovies[index]['vote_average'].toString()
+                      : 'Rating of movie',
+                  style: const TextStyle(fontSize: 15)),
 
               // Button for favorite list
               trailing: IconButton(
@@ -112,7 +123,7 @@ class _HomeState extends State<Home> {
           },
           separatorBuilder: (context, index) {
             return const Divider(
-              height: 35,
+              height: 40,
             );
           },
         ));
