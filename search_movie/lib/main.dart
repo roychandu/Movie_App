@@ -1,9 +1,9 @@
-// ignore_for_file: prefer_const_constructors
+// ignore_for_file: prefer_const_constructors, library_private_types_in_public_api
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:tmdb_api/tmdb_api.dart';
 
+import 'FavouriteMovieScreen.dart';
 import 'SplashScreen.dart';
 
 void main() => runApp(MyApp());
@@ -48,12 +48,14 @@ class _HomeState extends State<Home> {
       ),
     );
 
+    // ignore: non_constant_identifier_names
     Map Result = await tmdbWithCustomLogs.v3.movies.getTopRated();
     setState(() {
       topratedmovies = Result['results'];
-      print((Result));
     });
   }
+
+  // for Searchin movie
 
   void Filter(String Element) {
     List search = [];
@@ -75,15 +77,19 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          actions: [
-            IconButton(onPressed: () {}, icon: Icon(Icons.list_alt_rounded))
-          ],
           title: Center(
             child: Text("Movies App"),
           ),
         ),
         body: Column(
           children: [
+            SizedBox(
+              height: 20,
+            ),
+            Text(
+              "Top Rating Movies",
+              style: TextStyle(fontSize: 30),
+            ),
             SizedBox(
               height: 20,
             ),
@@ -108,8 +114,7 @@ class _HomeState extends State<Home> {
                     leading: Image(
                       image: NetworkImage(
                         'https://image.tmdb.org/t/p/w500' +
-                                topratedmovies[index]['poster_path'] ??
-                            '',
+                            topratedmovies[index]['poster_path'],
                       ),
                     ),
 
@@ -118,7 +123,6 @@ class _HomeState extends State<Home> {
                     title: Text(
                       topratedmovies[index]['title'] ?? 'Loading',
                     ),
-
                     subtitle: Text(
                       topratedmovies[index]['vote_average'] != null
                           ? topratedmovies[index]['vote_average'].toString()
@@ -127,13 +131,33 @@ class _HomeState extends State<Home> {
 
                     // Button for favorite list
                     trailing: IconButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Icons.favorite;
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FavouriteMovie(
+                                  // ignore: prefer_interpolation_to_compose_strings
+                                  Poster: 'https://image.tmdb.org/t/p/w500' +
+                                      (topratedmovies[index]['poster_path'] ??
+                                          ''),
+                                  Rating: topratedmovies[index]
+                                              ['vote_average'] !=
+                                          null
+                                      ? topratedmovies[index]['vote_average']
+                                          .toString()
+                                      : 'Rating of movie',
+                                  Title: topratedmovies[index]['title'] ??
+                                      'No Title',
+                                ),
+                              ));
+                        },
                         icon: const Icon(Icons.favorite_border_rounded)),
                   );
                 },
                 separatorBuilder: (context, index) {
                   return const Divider(
-                    height: 40,
+                    height: 35,
                   );
                 },
               ),
